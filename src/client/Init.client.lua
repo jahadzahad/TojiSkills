@@ -16,6 +16,7 @@ WCSClient:Start()
 
 REFX.Register(ReplicatedStorage.Shared.Refx.Movesets.Enel)
 REFX.Register(ReplicatedStorage.Shared.Refx.Movesets.Gojo)
+REFX.Register(ReplicatedStorage)
 REFX.Start()
 
 require(ReplicatedStorage.Shared.Modules.Darwin.DarwinUtilities).AnimationHandler:PreloadAnimations(
@@ -47,11 +48,11 @@ UserInputService.InputBegan:Connect(function(Input, Processed)
 	local Class = GetCharacterClass()
 
 	if Input.KeyCode == Enum.KeyCode.Z then
-		Class:GetSkillFromString("El Thor"):Start()
+		Class:GetSkillFromString("Chain Reel"):Start()
 	elseif Input.KeyCode == Enum.KeyCode.X then
-		Class:GetSkillFromString("Celestial Blitz"):Start()
+		Class:GetSkillFromString("Massacre Counter"):Start()
 	elseif Input.KeyCode == Enum.KeyCode.C then
-		Class:GetSkillFromString("Infinity Grab"):Start()
+		Class:GetSkillFromString("El Thor"):Start()
 	end
 end)
 

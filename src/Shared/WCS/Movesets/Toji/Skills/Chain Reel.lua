@@ -45,7 +45,7 @@ function Skill:OnStartServer()
 	self:ApplyCooldown(4)
 
 	local Stun = NegativeEffects.Stun.new(self.Character)
-	Stun:Start(3)
+	Stun:Start(6)
 
 	VFX:Start(Visuals:GetPlayers(Character, 10))
 
@@ -56,20 +56,20 @@ function Skill:OnStartServer()
 	end)
 end
 
+function Skill:Throw()
+	VFX:Throw()
+end
+
+WCS.DefineMessage(Skill.Throw, {
+	Type = "Event",
+	Destination = "Server",
+})
+
 function Skill:Hit()
 	VFX:Hit()
 end
 
 WCS.DefineMessage(Skill.Hit, {
-	Type = "Event",
-	Destination = "Server",
-})
-
-function Skill:Grab()
-	VFX:Grab()
-end
-
-WCS.DefineMessage(Skill.Grab, {
 	Type = "Event",
 	Destination = "Server",
 })
@@ -83,29 +83,20 @@ WCS.DefineMessage(Skill.Throw, {
 	Destination = "Server",
 })
 
-function Skill:Teleport()
-	VFX:Teleport()
+function Skill:PullEnd()
+	VFX:PullEnd()
 end
 
-WCS.DefineMessage(Skill.Teleport, {
+WCS.DefineMessage(Skill.PullEnd, {
 	Type = "Event",
 	Destination = "Server",
 })
 
-function Skill:Jump()
-	VFX:Jump()
+function Skill:PullStart()
+	VFX:PullStart()
 end
 
-WCS.DefineMessage(Skill.Jump, {
-	Type = "Event",
-	Destination = "Server",
-})
-
-function Skill:Slam()
-	VFX:Slam()
-end
-
-WCS.DefineMessage(Skill.Slam, {
+WCS.DefineMessage(Skill.PullStart, {
 	Type = "Event",
 	Destination = "Server",
 })
@@ -123,7 +114,21 @@ function Skill:OnStartClient()
 		return
 	end
 
-	local AnimationTrack = Animator:LoadAnimation(Animations.User)
+	function addTojiDagger()
+		local Dagger = ReplicatedStorage.Assets.Models.Movesets.Toji.TojiDagger:Clone()
+		Dagger.Parent = Character
+		local m6d = Instance.new("Motor6D")
+		m6d.Name = "Weld"
+		m6d.Part0 = Character:FindFirstChild("Left Arm")
+		m6d.Part1 = Dagger:FindFirstChild("Handle")
+		m6d.C0 = CFrame.new(0.073, -1, -0.567)
+		m6d.C1 = CFrame.new(0, 0, -0.543)
+		m6d.Parent = m6d.Part0
+	end
+
+	addTojiDagger()
+
+	local AnimationTrack = Animator:LoadAnimation(Animations.ChainSpin)
 	AnimationTrack:Play()
 
 	AnimationTrack:GetMarkerReachedSignal("Hitbox"):Once(function()

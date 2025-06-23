@@ -21,8 +21,10 @@ local AnimationAssets = ReplicatedStorage.Shared.Assets.Animations.Movesets.Toji
 local VFX
 
 local Animations = {
-	User = AnimationAssets:WaitForChild("User"),
-	Hit = AnimationAssets:WaitForChild("Hit"),
+	ChainSpin = AnimationAssets:WaitForChild("Chain Spin"),
+	ThrowStart = AnimationAssets:WaitForChild("Throw_Start"),
+	ThrowHold = AnimationAssets:WaitForChild("Throw_Hold"),
+	ThrowPull = AnimationAssets:WaitForChild("Throw_Pull"),
 	Victim = AnimationAssets:WaitForChild("Victim"),
 }
 

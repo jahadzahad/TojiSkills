@@ -4,7 +4,7 @@ local WCS = require(ReplicatedStorage.Packages.WCS)
 local Cast = WCS.RegisterStatusEffect("Cast")
 
 function Cast:OnStartServer()
-	self:SetHumanoidData({ WalkSpeed = { 0, "Set", 2 } })
+	self:SetHumanoidData({ WalkSpeed = { 8, "Set", 2 }, JumpPower = { 0, "Set", 2 } })
 end
 
 return Cast

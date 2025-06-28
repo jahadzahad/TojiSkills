@@ -31,7 +31,7 @@ function RockModule.Crater(Center : CFrame, Radius : number, MinRocks : number, 
 	CheckDebrisFolder()
 
 	local raycastParams = RaycastParams.new()
-	raycastParams.FilterDescendantsInstances = { workspace.Entities, DebrisFolder }
+	raycastParams.FilterDescendantsInstances = { workspace.Entities, DebrisFolder, workspace.Map.Destruction }
 	raycastParams.FilterType = Enum.RaycastFilterType.Exclude
 	raycastParams.IgnoreWater = true
 	local ray
@@ -87,7 +87,7 @@ function RockModule.Crater(Center : CFrame, Radius : number, MinRocks : number, 
 
 end
 
-function RockModule.Explosion(Center : CFrame, TotalRocks : number, MinSize : number, MaxSize : number, PlayerCollision : boolean, Ragdoll : boolean)
+function RockModule.Explosion(Center : CFrame, TotalRocks : number, MinSize : number, MaxSize : number, PlayerCollision : boolean, Ragdoll : boolean, Speed : number, UpForce : number)
 	TotalRocks = TotalRocks or 7
 	MinSize = MinSize or 0.5
 	MaxSize = MaxSize or 1.5
@@ -110,7 +110,7 @@ function RockModule.Explosion(Center : CFrame, TotalRocks : number, MinSize : nu
 			table.insert(players, v)
 		end
 	end
-	raycastParams.FilterDescendantsInstances = { workspace.Entities }
+	raycastParams.FilterDescendantsInstances = { workspace.Entities, workspace.Map.Destruction }
 	raycastParams.FilterType = Enum.RaycastFilterType.Exclude
 	raycastParams.IgnoreWater = true
 
@@ -148,8 +148,8 @@ function RockModule.Explosion(Center : CFrame, TotalRocks : number, MinSize : nu
 
 			game:GetService("Debris"):AddItem(Rock, 4.5)
 
-			local velocitySpread = 32 
-			local upwardForce = 22
+			local velocitySpread = Speed or 32 
+			local upwardForce = UpForce or 22
 			local velocity = Vector3.new(math.random(-velocitySpread, velocitySpread),upwardForce,math.random(-velocitySpread, velocitySpread))
 			local bodyVelocity = Instance.new("BodyVelocity")
 

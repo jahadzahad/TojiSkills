@@ -34,7 +34,6 @@ function getCurrentWCS_Character(characterModel)
 	return Character.GetCharacterFromInstance(characterModel)
 end
 
--- Public: Create a hitbox
 function HitboxModule:createHitbox(data, onHit)
 	local self = setmetatable({}, HitboxModule.HitboxClass)
 
@@ -44,7 +43,6 @@ function HitboxModule:createHitbox(data, onHit)
 	local rootPart = caster:FindFirstChild("HumanoidRootPart")
 	if not rootPart then return self end
 
-	-- Configuration
 	self.Destroyed = false
 	self.Visualize = nil
 	self.Connection = nil
@@ -53,6 +51,7 @@ function HitboxModule:createHitbox(data, onHit)
 	self.MoveOffset = data.Offset or CFrame.new(0, 0, 0)
 	self.BaseOffset = data.Offset or CFrame.new(0, 0, 0)
 	self.RootPart = rootPart
+	self.Direction = nil
 
 	local size = data.Size or Vector3.new(5, 5, 5)
 	local offset = data.Offset or CFrame.new(0, 0, 0)
@@ -64,13 +63,17 @@ function HitboxModule:createHitbox(data, onHit)
 	local BlockBreak = data.BlockBreak or false
 	local hitType = data.HitType or "OneHit"
 	local tickInterval = data.TickInterval or 0.5
+	local destructionDamage = data.DDamage or 0
 	local debrisTime = data.Debris
 
 	local params = OverlapParams.new()
 	params.FilterType = Enum.RaycastFilterType.Include
-	params.FilterDescendantsInstances = data.FilterList or {Workspace.Entities}
+	params.FilterDescendantsInstances = data.FilterList or {Workspace.Entities, workspace.Map}
 
 	local AlreadyChecked = {}
+	local hitList = {}
+	local hitTimestamps = {}
+	local houseTimestamps = {}
 
 	local function shouldHit(character)
 		if character:GetAttribute("IFrames") and not ignoresIFrames then return false end
@@ -112,7 +115,6 @@ function HitboxModule:createHitbox(data, onHit)
 			return
 		end
 
-		-- Optional Visualization
 		if data.Visualize or Workspace:GetAttribute("Debugging") then
 			local visual = Instance.new("Part")
 			visual.Anchored = true
@@ -132,8 +134,6 @@ function HitboxModule:createHitbox(data, onHit)
 			self:AddFor(debrisTime)
 		end
 
-		local hitList = {}
-
 		self.Connection = RunService.Heartbeat:Connect(function()
 			if not rootPart or not rootPart.Parent then
 				self:Destroy()
@@ -141,33 +141,63 @@ function HitboxModule:createHitbox(data, onHit)
 			end
 
 			if hitboxType == "Box" then
-				local cframe = rootPart.CFrame * self.MoveOffset
+				local cframe = (self.Direction or rootPart.CFrame) * self.MoveOffset
 				if self.Visualize then
 					self.Visualize.CFrame = cframe
 				end
 
 				local results = Workspace:GetPartBoundsInBox(cframe, size, params)
+				local currentTime = tick()
 
 				for _, part in pairs(results) do
+					if part.Parent:IsA("Model") and destructionDamage > 0 then
+						local House = part.Parent
+						if House:GetAttribute("CanDestroy") == true then
+							if hitType == "OneHit" then
+								if not table.find(hitList, House) then
+									House:SetAttribute("Health", House:GetAttribute("Health") - destructionDamage)
+									table.insert(hitList, House)
+								end
+							elseif hitType == "Tick" then
+								local lastHitTime = houseTimestamps[House]
+								if not lastHitTime or (currentTime - lastHitTime) >= tickInterval then
+									House:SetAttribute("Health", House:GetAttribute("Health") - destructionDamage)
+									houseTimestamps[House] = currentTime
+								end
+							elseif hitType == "SingleTarget" then
+								House:SetAttribute("Health", House:GetAttribute("Health") - destructionDamage)
+							end
+						end
+					end
+
 					local character = part:FindFirstAncestorOfClass("Model")
 					if not character then continue end
-					if table.find(hitList, character) then continue end
 					if character == caster then continue end
 					if not character:FindFirstChildOfClass("Humanoid") then continue end
 
+					if hitType == "OneHit" then
+						if table.find(hitList, character) then continue end
+					elseif hitType == "Tick" then
+						local lastHitTime = hitTimestamps[character]
+						if lastHitTime and (currentTime - lastHitTime) < tickInterval then
+							continue
+						end
+					elseif hitType == "SingleTarget" then
+					end
+
 					if not shouldHit(character) then self:Destroy() break end
 
-					table.insert(hitList, character)
-					onHit(character,getCurrentWCS_Character(character))
+					if hitType == "OneHit" then
+						table.insert(hitList, character)
+					elseif hitType == "Tick" then
+						hitTimestamps[character] = currentTime
+					end
+
+					onHit(character, getCurrentWCS_Character(character))
 
 					if hitType == "SingleTarget" then
 						self:Destroy()
 						break
-					elseif hitType == "Tick" then
-						task.delay(tickInterval, function()
-							local index = table.find(hitList, character)
-							if index then table.remove(hitList, index) end
-						end)
 					end
 				end
 			end
@@ -177,22 +207,22 @@ function HitboxModule:createHitbox(data, onHit)
 	return self
 end
 
--- Move the hitbox to a target CFrame over a specified duration
 function HitboxModule.HitboxClass:Move(targetCFrame, duration, easingStyle, easingDirection, onComplete)
 	if self.Destroyed then return end
 
-	-- Default parameters
+	if not self.Direction then
+		self.Direction = self.RootPart.CFrame
+	end
+
 	duration = duration or 1
 	easingStyle = easingStyle or Enum.EasingStyle.Linear
 	easingDirection = easingDirection or Enum.EasingDirection.InOut
 
-	-- Cancel any existing move tween
 	if self.MoveTween then
 		self.MoveTween:Cancel()
 		self.MoveTween = nil
 	end
 
-	-- Use manual interpolation instead of TweenService
 	local startOffset = self.MoveOffset
 	local startTime = tick()
 
@@ -206,13 +236,12 @@ function HitboxModule.HitboxClass:Move(targetCFrame, duration, easingStyle, easi
 		local elapsed = tick() - startTime
 		local alpha = math.min(elapsed / duration, 1)
 
-		-- Apply easing
 		if easingStyle == Enum.EasingStyle.Sine then
 			if easingDirection == Enum.EasingDirection.In then
 				alpha = 1 - math.cos(alpha * math.pi / 2)
 			elseif easingDirection == Enum.EasingDirection.Out then
 				alpha = math.sin(alpha * math.pi / 2)
-			else -- InOut
+			else
 				alpha = 0.5 * (1 - math.cos(alpha * math.pi))
 			end
 		elseif easingStyle == Enum.EasingStyle.Quad then
@@ -220,7 +249,7 @@ function HitboxModule.HitboxClass:Move(targetCFrame, duration, easingStyle, easi
 				alpha = alpha * alpha
 			elseif easingDirection == Enum.EasingDirection.Out then
 				alpha = 1 - (1 - alpha) * (1 - alpha)
-			else -- InOut
+			else
 				alpha = alpha < 0.5 and 2 * alpha * alpha or 1 - 2 * (1 - alpha) * (1 - alpha)
 			end
 		elseif easingStyle == Enum.EasingStyle.Bounce then
@@ -237,10 +266,8 @@ function HitboxModule.HitboxClass:Move(targetCFrame, duration, easingStyle, easi
 			end
 		end
 
-		-- Interpolate CFrame
 		self.MoveOffset = startOffset:Lerp(targetCFrame, alpha)
 
-		-- Check if completed
 		if alpha >= 1 then
 			connection:Disconnect()
 			self.MoveOffset = targetCFrame
@@ -250,11 +277,9 @@ function HitboxModule.HitboxClass:Move(targetCFrame, duration, easingStyle, easi
 		end
 	end)
 
-	-- Store connection for cleanup
 	self.MoveTween = connection
 end
 
--- Stop any current movement
 function HitboxModule.HitboxClass:StopMove()
 	if self.MoveTween then
 		self.MoveTween:Disconnect()
@@ -262,25 +287,21 @@ function HitboxModule.HitboxClass:StopMove()
 	end
 end
 
--- Reset hitbox position to its original offset
 function HitboxModule.HitboxClass:ResetPosition()
 	self:StopMove()
 	self.MoveOffset = self.BaseOffset
 end
 
--- Auto destroy after `Length` seconds
 function HitboxModule.HitboxClass:AddFor(length)
 	task.delay(length, function()
 		self:Destroy()
 	end)
 end
 
--- Clean up
 function HitboxModule.HitboxClass:Destroy()
 	if self.Destroyed then return end
 	self.Destroyed = true
 
-	-- Cancel any active movement
 	self:StopMove()
 
 	if self.Visualize then

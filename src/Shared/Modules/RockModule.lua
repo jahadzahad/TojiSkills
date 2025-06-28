@@ -119,8 +119,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService('TweenService')
 
 --/ @defined \--
-local Map = workspace.World.Map
-local Effects = workspace.World.Debris
+local Map = workspace.Map
+local Effects = workspace.Debris
 
 --/ @modules 'services' \--
 local SpawnService = {}
@@ -285,7 +285,7 @@ function Crater:ExplosionRocks(Data: RockData)
 			Part.CastShadow = false
 			Part.CanQuery = false
 
-			Part.CollisionGroup = 'Debris'
+			Part.CollisionGroup = 'RockDebris'
 
 			Part.CFrame = CFrame.new(Position) * CFrame.new(Radius.X, Radius.Y, Radius.Z)
 			Part.Parent = Folder
@@ -430,7 +430,7 @@ function Crater:Trail(Position: Vector3, Direction: Vector3, Data: TrailData, Ex
 				Part.CastShadow = false
 				Part.CanQuery = false
 
-				Part.CollisionGroup = 'Debris'
+				Part.CollisionGroup = 'RockDebris'
 
 				local Raycast = Auxiliary:Raycast(NewPosition, -Vector3.yAxis * 20)
 
@@ -530,7 +530,7 @@ function Crater:Spawn(Data: GroundData)
 				Part.CanTouch = false
 				Part.CastShadow = false
 				Part.CanQuery = false
-				Part.CollisionGroup = 'Debris'
+				Part.CollisionGroup = 'RockDebris'
 				Part.CFrame = NewCFrame
 				Part.Parent = Folder
 				

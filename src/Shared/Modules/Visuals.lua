@@ -64,4 +64,19 @@ function module:GetPlayers(Character,Range)
 	return Players
 end
 
+function module:GetPlayersFromPart(Part, Range)
+	if not Range then
+		Range = 10000
+	end
+	local Players = {}
+	for _,v in pairs(game.Players:GetPlayers()) do
+		if v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+			if (v.Character.HumanoidRootPart.Position - Part.Position).Magnitude <= Range then
+				table.insert(Players,v)
+			end
+		end
+	end
+	return Players
+end
+
 return module

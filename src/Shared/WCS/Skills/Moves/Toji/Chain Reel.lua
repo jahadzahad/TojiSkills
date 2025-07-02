@@ -1,4 +1,5 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local TextService = game:GetService("TextService")
 local TweenService = game:GetService("TweenService")
 
@@ -11,6 +12,7 @@ local Visuals = require(ReplicatedStorage.Shared.Modules.Visuals)
 local Ragdoll = require(ReplicatedStorage.Shared.Modules.Ragdoll)
 local Velocity = require(ReplicatedStorage.Shared.Modules.Velocity)
 local Hitbox = require(ReplicatedStorage.Shared.Modules.Hitbox)
+local Signal = require(ReplicatedStorage.Shared.Modules.GoodSignal)
 
 local Promise = require(ReplicatedStorage.Packages.promise)
 
@@ -26,6 +28,13 @@ local AnimationAssets = ReplicatedStorage.Shared.Assets.Animations.Movesets.Toji
 
 local VFX
 
+local ClientSignals = {
+	Throw = Signal.new(),
+	PullStart = Signal.new(),
+	PullEnd = Signal.new(),
+	Hit = Signal.new(),
+}
+
 local Animations = {
 	ChainSpin = AnimationAssets:WaitForChild("ChainSpin"),
 	ThrowStart = AnimationAssets:WaitForChild("Throw_Start"),
@@ -38,6 +47,7 @@ local Skill = WCS.RegisterSkill(tostring(script.Name))
 
 function Skill:OnStartServer()
 	self.Maid = Maid.new()
+	self._End = Signal.new()
 
 	local Character = self.Character.Instance
 	local Humanoid = self.Character.Humanoid
@@ -45,7 +55,7 @@ function Skill:OnStartServer()
 		return
 	end
 
-	local Effect = require(ReplicatedStorage.Shared.Refx.Movesets.Toji[tostring(script.Name)])
+	local Effect = require(ReplicatedStorage.Shared.Refx.Combat.Skills.Toji[tostring(script.Name)])
 	VFX = Effect.new(Character)
 
 	self:ApplyCooldown(4)
@@ -57,7 +67,158 @@ function Skill:OnStartServer()
 
 	print("[Skill Start]", script.Name)
 
-	task.wait(10)
+	local function addTojiDagger()
+		local Chains = Assets.Models.Movesets.Toji.Chains:Clone()
+		Chains.Parent = Character
+		local chainStartPoint = Chains.Start
+		local chainEndPoint = Chains.End
+		local weldStart = Instance.new("Weld")
+		local weldEnd = Instance.new("Weld")
+		weldStart.Parent = chainStartPoint
+		weldEnd.Parent = chainEndPoint
+
+		local Dagger = Assets.Models.Movesets.Toji.TojiDagger:Clone()
+		Dagger.Parent = Character
+		local m6d = Instance.new("Motor6D")
+		m6d.Name = "Weld"
+		m6d.Part0 = Character:FindFirstChild("Left Arm")
+		m6d.Part1 = Dagger:FindFirstChild("Handle")
+		m6d.C0 = CFrame.new(0.073, -1, -0.567)
+		m6d.C1 = CFrame.new(0, 0, -0.543)
+		m6d.Parent = m6d.Part1
+
+		local daggerEndAttachment = Dagger.Parts["Torus.006"].Attachment
+
+		weldStart.Part0 = Character:FindFirstChild("Left Arm")
+		weldStart.Part1 = chainStartPoint
+		weldStart.C0 = CFrame.new(0.073, -1, -0.567)
+		weldEnd.Part0 = daggerEndAttachment.Parent
+		weldEnd.Part1 = chainEndPoint
+		weldEnd.C0 = CFrame.new(daggerEndAttachment.Position)
+
+		return Dagger, m6d
+	end
+
+	local TojiDagger, daggerM6d = addTojiDagger()
+	local hitbox
+	local mainChain
+
+	local daggerVelocity: BodyVelocity
+
+	local function bringbackDagger(characterHit)
+		local distance = (TojiDagger.Handle.Position - Character.HumanoidRootPart.Position).Magnitude
+		local duration = 0.5
+		local speed = distance * 0.99 / duration
+
+		print(characterHit, "is the character hit")
+		if characterHit then
+			local hrp = characterHit:FindFirstChild("HumanoidRootPart")
+			if hrp then
+				daggerVelocity.Parent = hrp
+				print("[Toji Dagger] Bringing back dagger to character:", hrp)
+			end
+		end
+
+		local con
+		con = RunService.Heartbeat:Connect(function(delta)
+			local direction = (Character.HumanoidRootPart.Position - TojiDagger.Handle.Position).Unit
+			distance = (TojiDagger.Handle.Position - Character.HumanoidRootPart.Position).Magnitude
+			daggerVelocity.Velocity = direction * speed
+
+			if distance < 1 then
+				con:Disconnect()
+				daggerVelocity.Velocity = Vector3.new(0, 0, 0)
+			end
+		end)
+		Promise.delay(duration):andThen(function()
+			con:Disconnect()
+			daggerVelocity.Velocity = Vector3.new(0, 0, 0)
+			TojiDagger:Destroy()
+			daggerVelocity:Destroy()
+			Character:FindFirstChild("Chains"):Destroy()
+			self._End:Fire()
+		end)
+	end
+
+	local function bindCharacter(character)
+		local hrp = character:FindFirstChild("HumanoidRootPart")
+		local weld = Instance.new("Weld")
+		weld.Part0 = TojiDagger.Handle
+		weld.Part1 = hrp
+		weld.Parent = TojiDagger.Handle
+
+		-- make them play animation till they reach end point
+	end
+
+	local function onChainHit(target)
+		bindCharacter(target.Parent)
+		print("[Chain Hit] Target:", target)
+		mainChain:cancel()
+		hitbox:Disconnect()
+		self:PullStart()
+		bringbackDagger(target.Parent)
+	end
+
+	local function addHitbox()
+		local hbSize = Vector3.new(8, 8, 8)
+		local hbOffset = Vector3.new(0, 0, 0)
+		local overlapParams = OverlapParams.new()
+		overlapParams.FilterType = Enum.RaycastFilterType.Exclude
+		overlapParams.FilterDescendantsInstances = { Character, TojiDagger }
+		local DebounceList = {}
+
+		local hb
+		hb = RunService.Heartbeat:Connect(function(delta)
+			local calculatedCFrame = TojiDagger.Handle.CFrame * CFrame.new(hbOffset)
+			local hits = workspace:GetPartBoundsInBox(calculatedCFrame, hbSize, overlapParams)
+			for _, hit in pairs(hits) do
+				if
+					not DebounceList[hit]
+					and hit:IsA("BasePart")
+					and hit.Parent
+					and hit.Parent:FindFirstChild("Humanoid")
+				then
+					print("[Chain Hit] Hit detected:", hit.Parent)
+					DebounceList[hit] = true
+					onChainHit(hit)
+					hb:Disconnect()
+					break
+				end
+			end
+		end)
+
+		return hb
+	end
+
+	local function throwDagger()
+		daggerM6d:Destroy()
+
+		TojiDagger.Handle.CFrame = Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -1.5)
+
+		local forwardDir = Character.HumanoidRootPart.CFrame.lookVector * 60
+		daggerVelocity = Instance.new("BodyVelocity")
+		daggerVelocity.Velocity = forwardDir
+		daggerVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+		daggerVelocity.Parent = TojiDagger.Handle
+		daggerVelocity.P = math.huge
+
+		hitbox = addHitbox()
+
+		mainChain = Promise.resolve():andThenCall(Promise.delay, 3):andThen(function()
+			hitbox:Disconnect()
+			self:PullStart()
+			bringbackDagger()
+		end)
+
+		print("[Toji Dagger] Throwing dagger with tween")
+	end
+
+	Promise.delay(2):andThen(function()
+		self:Throw()
+		throwDagger()
+	end)
+
+	self._End:Wait()
 
 	self.Ended:Once(function()
 		print("[Skill End]", script.Name)
@@ -66,15 +227,16 @@ function Skill:OnStartServer()
 end
 
 function Skill:Throw()
+	ClientSignals.Throw:Fire()
 	VFX:Throw()
 end
 
 WCS.DefineMessage(Skill.Throw, {
 	Type = "Event",
-	Destination = "Server",
+	Destination = "Client",
 })
 
-function Skill:Hit()
+function Skill:Hit(characterHit)
 	VFX:Hit()
 end
 
@@ -93,12 +255,13 @@ WCS.DefineMessage(Skill.PullEnd, {
 })
 
 function Skill:PullStart()
-	VFX:PullStart()
+	ClientSignals.PullStart:Fire()
+	--	VFX:PullStart()
 end
 
 WCS.DefineMessage(Skill.PullStart, {
 	Type = "Event",
-	Destination = "Server",
+	Destination = "Client",
 })
 
 function Skill:OnStartClient()
@@ -114,27 +277,15 @@ function Skill:OnStartClient()
 		return
 	end
 
-	local function addTojiDagger()
-		local Dagger = Assets.Models.Movesets.Toji.TojiDagger:Clone()
-		Dagger.Parent = Character
-		local m6d = Instance.new("Motor6D")
-		m6d.Name = "Weld"
-		m6d.Part0 = Character:FindFirstChild("Left Arm")
-		m6d.Part1 = Dagger:FindFirstChild("Handle")
-		m6d.C0 = CFrame.new(0.073, -1, -0.567)
-		m6d.C1 = CFrame.new(0, 0, -0.543)
-		m6d.Parent = m6d.Part1
-
-		return Dagger, m6d
-	end
-
-	local TojiDagger, daggerM6d = addTojiDagger()
-
-	-- play the chain spin animation for 0.5 seconds before starting the skill
 	local chainSpinTrack = Animator:LoadAnimation(Animations.ChainSpin)
 	chainSpinTrack:Play()
 	print("[Chain Spin Animation Started]")
-	task.wait(2)
+	-- instead you will wait for the throw message from the server
+	ClientSignals.Throw:Once(function()
+		print("T_T")
+		chainSpinTrack:Stop()
+	end)
+	ClientSignals.Throw:Wait()
 	print("[Chain Spin Animation Finished]")
 	chainSpinTrack:Stop()
 
@@ -150,66 +301,17 @@ function Skill:OnStartClient()
 		end
 	)
 
-	-- connect vfx to throw start
-	-- start hitbox on throw start
-
 	local function throwPullAnimation()
 		throwHoldAnimationInitPromise:cancel()
 		throwStartTrack:Stop()
 		throwHoldTrack:Stop()
-
 		throwPullTack:Play()
 	end
 
-	local function onChainHit(target, WCStarget)
-		print("[Chain Hit] Target:", target, "WCSTarget:", WCStarget)
+	ClientSignals.PullStart:Once(function()
+		print("[Pull Start Animation]")
 		throwPullAnimation()
-	end
-
-	local function addHitbox()
-		local hb = Hitbox:createHitbox({
-			Caster = TojiDagger.Handle,
-			Size = Vector3.new(6, 6, 6),
-			Offset = CFrame.new(0, 0, -4),
-			HitType = "SingleTarget",
-			BlockBreak = true,
-			Debris = 0.1,
-			Visualize = true,
-		}, function(target, WCStarget)
-			-- This fires when a target just got hit
-			onChainHit(target, WCStarget)
-		end)
-
-		return hb
-	end
-
-	local function throwDagger()
-		daggerM6d:Destroy()
-
-		TojiDagger.Handle.CFrame = Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -1.5)
-
-		local forwardDir = Character.HumanoidRootPart.CFrame.lookVector * 60
-		local forwardBodyVelocity = Instance.new("BodyVelocity")
-		forwardBodyVelocity.Velocity = forwardDir
-		forwardBodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-		forwardBodyVelocity.Parent = TojiDagger.Handle
-		forwardBodyVelocity.P = math.huge
-
-		addHitbox()
-
-		--local outTween =
-		--	TweenService:Create(TojiDagger.Handle, TweenInfo.new(10, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		--		CFrame = CFrame.lookAlong(Character.HumanoidRootPart.CFrame * forwardDir, forwardDir)
-		--			* CFrame.Angles(math.rad(-90), 0, 0),
-		--	})
-		--			:Play()
-
-		--outTween:Play()
-		print("[Toji Dagger] Throwing dagger with tween")
-		--outTween.Completed:Wait()
-	end
-
-	throwDagger()
+	end)
 
 	self.Ended:Once(function() end)
 end

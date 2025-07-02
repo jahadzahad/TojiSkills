@@ -14,8 +14,7 @@ WCSClient:RegisterDirectory(ReplicatedStorage.Shared.WCS.StatusEffects)
 
 WCSClient:Start()
 
-REFX.Register(ReplicatedStorage.Shared.Refx.Movesets.Enel)
-REFX.Register(ReplicatedStorage.Shared.Refx.Movesets.Toji)
+REFX.Register(ReplicatedStorage.Shared.Refx.Combat.Skills.Toji)
 REFX.Start()
 
 require(ReplicatedStorage.Shared.Modules.Darwin.DarwinUtilities).AnimationHandler:PreloadAnimations(

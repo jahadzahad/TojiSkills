@@ -20,7 +20,23 @@ local Slide = require(Skills.Movement.Slide)
 local Dash = require(Skills.Movement.Dash)
 local SlideJump = require(Skills.Movement.SlideJump)
 
-local El_Thor = require(Skills.Moves.Enel["El Thor"])
-local Celestial_Blitz = require(Skills.Moves.Enel["Celestial Blitz"])
+local Chain_Reel = require(Skills.Moves.Toji["Chain Reel"])
+local MassacreCounter = require(Skills.Moves.Toji["Massacre Counter"])
 
-return WCS.CreateMoveset("Enel", { Fist, Block, BlockBreak, Parry, Slide, SlideAttack, Dash, DropKick, SlideJump, Evade, Pludge, CriticalAttack, Uptilt, El_Thor, Celestial_Blitz })
+return WCS.CreateMoveset("Toji", {
+	Fist,
+	Block,
+	BlockBreak,
+	Parry,
+	Slide,
+	SlideAttack,
+	Dash,
+	DropKick,
+	SlideJump,
+	Evade,
+	Pludge,
+	CriticalAttack,
+	Uptilt,
+	Chain_Reel,
+	MassacreCounter,
+})

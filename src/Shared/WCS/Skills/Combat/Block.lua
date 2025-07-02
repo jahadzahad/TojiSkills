@@ -8,7 +8,7 @@ local Visuals = require(ReplicatedStorage.Shared.Modules.Visuals)
 
 local Animations = ReplicatedStorage.Shared.Assets.Animations
 
-local BlockAnimation = Animations.Combats.Fists.Block
+--local BlockAnimation = Animations.Combats.Fists.Block
 local BlockVFX = require(ReplicatedStorage.Shared.Refx.Combat.Block)
 
 local BlockSE = require(ReplicatedStorage.Shared.WCS.StatusEffects.Block)
@@ -23,14 +23,14 @@ function Block:OnStartServer()
 	self.Character.Instance:SetAttribute("Blocking", false)
 	self.Character.Instance:SetAttribute("Parry", true)
 
-	Animation.PlayAnimation(self.Character.Instance, BlockAnimation)
+	--Animation.PlayAnimation(self.Character.Instance, BlockAnimation)
 	self.BlockVFX = BlockVFX.new(self.Character.Instance)
 	self.BlockVFX:Start(Visuals:GetPlayers(self.Character.Instance))
 
 	self.BlockEffect = BlockSE.new(self.Character)
 	self.BlockEffect:Start()
 
-	task.delay(.5, function()
+	task.delay(0.5, function()
 		self.Character.Instance:SetAttribute("Parry", false)
 		self.Character.Instance:SetAttribute("Blocking", true)
 	end)
@@ -39,7 +39,7 @@ end
 function Block:OnEndServer()
 	self.Character.Instance:SetAttribute("Blocking", false)
 	self.Character.Instance:SetAttribute("Parry", false)
-	Animation.StopAnimation(self.Character.Instance, BlockAnimation)
+	--Animation.StopAnimation(self.Character.Instance, BlockAnimation)
 
 	if self.BlockEffect then
 		self.BlockEffect:Stop()

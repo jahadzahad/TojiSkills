@@ -17,9 +17,7 @@ WCSServer:Start()
 
 local WCSCharacter = WCS.Character
 
-local EnelMoveset = require(ReplicatedStorage.Shared.WCS.Movesets.Enel.Moveset)
-local GojoMoveset = require(ReplicatedStorage.Shared.WCS.Movesets.Gojo.Moveset)
-local TojiMoveset = require(ReplicatedStorage.Shared.WCS.Movesets.Toji.Moveset)
+local TojiMoveset = require(ReplicatedStorage.Shared.WCS.Movesets.Toji)
 
 local function PlayerAdded(Player: Player)
 	local function CharacterAdded(Character: Model)
@@ -29,8 +27,6 @@ local function PlayerAdded(Player: Player)
 		Character.Parent = workspace.World.Alive
 
 		local CharacterClass = WCSCharacter.new(Character)
-		CharacterClass:ApplySkillsFromMoveset(EnelMoveset)
-		CharacterClass:ApplySkillsFromMoveset(GojoMoveset)
 		CharacterClass:ApplySkillsFromMoveset(TojiMoveset)
 
 		Humanoid.Died:Once(function()

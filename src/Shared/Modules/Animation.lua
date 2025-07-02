@@ -7,8 +7,24 @@ local Animations = ReplicatedStorage.Shared.Assets.Animations
 local Animation = {}
 Animation.Loaded = {}
 
+local function getAnimator(character)
+	if not character then return nil end
+
+	local humanoid = character:FindFirstChild("Humanoid")
+	if humanoid and humanoid:FindFirstChild("Animator") then
+		return humanoid.Animator
+	end
+
+	local animController = character:FindFirstChildOfClass("AnimationController")
+	if animController and animController:FindFirstChild("Animator") then
+		return animController.Animator
+	end
+
+	return nil
+end
+
 function Animation.LoadAnimations(Character: Model)
-	local Animator = Character:FindFirstChild("Humanoid") and Character:FindFirstChild("Humanoid").Animator or Character:FindFirstChildOfClass("AnimationController").Animator
+	local Animator = getAnimator(Character)
 	
 	Animation.Loaded[Character] = {}
 	
@@ -20,6 +36,10 @@ function Animation.LoadAnimations(Character: Model)
 end
 
 function Animation.GetAnimation(Character, Track)
+	if not Animation.Loaded[Character] or not Animation.Loaded[Character][Track] then
+		warn("Animation not found...")
+		warn("For Character:", Character, "Track Requested:", Track)
+	end
 	return Animation.Loaded[Character][Track]
 end
 
@@ -38,10 +58,18 @@ function Animation.Unload(Character)
 end
 
 function Animation.PlayAnimation(Character, Track)
+	if not Animation.Loaded[Character] or not Animation.Loaded[Character][Track] then
+		warn("Animation not found...")
+		warn("For Character:", Character, "Track Requested:", Track)
+	end
 	Animation.Loaded[Character][Track]:Play(.1)
 end
 
 function Animation.StopAnimation(Character,Track)
+	if not Animation.Loaded[Character] or not Animation.Loaded[Character][Track] then
+		warn("Animation not found...")
+		warn("For Character:", Character, "Track Requested:", Track)
+	end
 	Animation.Loaded[Character][Track]:Stop(.1)
 end
 

@@ -19,6 +19,84 @@
 local CameraShakeInstance = require(script.Parent.CameraShakeInstance)
 
 local CameraShakePresets = {
+	DashHit = function()
+		local c = CameraShakeInstance.new(8, 20, 0, 0.3)
+		c.PositionInfluence = Vector3.new(0.1,0.1,0.1)
+		c.RotationInfluence = Vector3.new(0,0,0)
+		return c
+	end,
+	DownSlam = function()
+		local c = CameraShakeInstance.new(30, 15, 0, 0.5)
+		c.PositionInfluence = Vector3.new(0.15,0.15,0.15)
+		c.RotationInfluence = Vector3.new(0,0,0)
+		return c
+	end,
+	Vibrate = function()
+		local c = CameraShakeInstance.new(3, 21, 0.1, 1)
+		c.PositionInfluence = Vector3.new(0.8, 0.8,0.8)
+		c.RotationInfluence = Vector3.new(0,0,0)
+		return c
+	end;
+	Small = function()
+		local c = CameraShakeInstance.new(4, 21, 0.1, 0.5)
+		c.PositionInfluence = Vector3.new(0.8, 0.8,0.8)
+		c.RotationInfluence = Vector3.new(0,0,0)
+		return c
+	end;
+	SmallMedium = function()
+		local c = CameraShakeInstance.new(6, 24, 0.1, 0.3)
+		c.PositionInfluence = Vector3.new(0.13, 0.13,0.13)
+		c.RotationInfluence = Vector3.new(0,0,0)
+		return c
+	end;
+	Slam = function()
+		local c = CameraShakeInstance.new(2.5, 21, 0.1, 0.2)
+		c.PositionInfluence = Vector3.new(0.8, 0.8,0.8)
+		c.RotationInfluence = Vector3.new(0,0,0)
+		return c
+	end;
+	Hit = function()
+		local c = CameraShakeInstance.new(1.1, 25, 0.1, 0.2)
+		c.PositionInfluence = Vector3.new(0.8, 0.8,0.8)
+		c.RotationInfluence = Vector3.new(0,0,0)
+		return c
+	end;
+	Tiny = function()
+		local c = CameraShakeInstance.new(2, 15, 0.1, 0.3)
+		c.PositionInfluence = Vector3.new(0.8, 0.8,0.8)
+		c.RotationInfluence = Vector3.new(0,0,0)
+		return c
+	end;
+	VeryTiny = function()
+		local c = CameraShakeInstance.new(1, 10, 0.1, 0.2)
+		c.PositionInfluence = Vector3.new(0.8, 0.8,0.8)
+		c.RotationInfluence = Vector3.new(0,0,0)
+		return c
+	end;
+	SuperTiny = function()
+		local c = CameraShakeInstance.new(0.5, 10, 0.1, 0.2)
+		c.PositionInfluence = Vector3.new(0.8, 0.8,0.8)
+		c.RotationInfluence = Vector3.new(0,0,0)
+		return c
+	end;
+	Medium = function()
+		local c = CameraShakeInstance.new(8, 21, 0.1, 0.8)
+		c.PositionInfluence = Vector3.new(0.8, 0.8,0.8)
+		c.RotationInfluence = Vector3.new(0,0,0)
+		return c
+	end;
+	Large = function()
+		local c = CameraShakeInstance.new(9, 25, 0.1, 0.8)
+		c.PositionInfluence = Vector3.new(0.8, 0.8,0.8)
+		c.RotationInfluence = Vector3.new(0,0,0)
+		return c
+	end,
+	MediumShorter = function()
+		local c = CameraShakeInstance.new(7, 17, 0.1, 0.7)
+		c.PositionInfluence = Vector3.new(0.8, 0.8,0.8)
+		c.RotationInfluence = Vector3.new(0,0,0)
+		return c
+	end;
 	EXplosion = function()
 		local c = CameraShakeInstance.new(5, 10, 0, 1.5)
 		c.PositionInfluence = Vector3.new(0.25, 0.25, 0.25)

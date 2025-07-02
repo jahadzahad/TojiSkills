@@ -1,4 +1,4 @@
-local ReplicatedStorage = game:GetService( 'ReplicatedStorage' )
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Packet = require(ReplicatedStorage.Shared.Modules.Packet)
 
 -->> EXAMPLE <<--
@@ -22,8 +22,11 @@ local Packet = require(ReplicatedStorage.Shared.Modules.Packet)
 --end)
 
 return {
-	--[ MISC ]--
-	
-	Ragdoll = Packet( 'Ragdoll', { Value = Packet.Any } ),
-    Parry = Packet( 'Parry', { Caster = Packet.Any } )
+    --[ MISC ]--
+	Ragdoll = Packet("Ragdoll",{Value = Packet.Any}),
+    Parry = Packet("Parry",{Caster = Packet.Any}),
+    AutoRotate = Packet("AutoRotate", {Value = Packet.Any}),
+    
+    --[ SKILLS ]--
+    SkillsUi = Packet("SkillsUi", {Moveset = Packet.Any, Enabled = Packet.Any}),
 }

@@ -43,6 +43,8 @@ local Animations = {
 	Victim = AnimationAssets:WaitForChild("Victim"),
 }
 
+local DAGGER_THROW_SPEED = 90
+
 local Skill = WCS.RegisterSkill(tostring(script.Name))
 
 function Skill:OnStartServer()
@@ -195,7 +197,7 @@ function Skill:OnStartServer()
 
 		TojiDagger.Handle.CFrame = Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -1.5)
 
-		local forwardDir = Character.HumanoidRootPart.CFrame.lookVector * 60
+		local forwardDir = Character.HumanoidRootPart.CFrame.lookVector * DAGGER_THROW_SPEED
 		daggerVelocity = Instance.new("BodyVelocity")
 		daggerVelocity.Velocity = forwardDir
 		daggerVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)

@@ -26,8 +26,6 @@ local NegativeEffects = {
 -- Animation assets
 local AnimationAssets = ReplicatedStorage.Shared.Assets.Animations.Movesets.Toji["Chain Reel"]
 
-local VFX
-
 local ClientSignals = {
 	Throw = Signal.new(),
 	PullStart = Signal.new(),
@@ -47,6 +45,8 @@ local DAGGER_THROW_SPEED = 90
 
 local Skill = WCS.RegisterSkill(tostring(script.Name))
 
+local VFX
+
 function Skill:OnStartServer()
 	self.Maid = Maid.new()
 	self._End = Signal.new()
@@ -59,13 +59,14 @@ function Skill:OnStartServer()
 
 	local Effect = require(ReplicatedStorage.Shared.Refx.Combat.Skills.Toji[tostring(script.Name)])
 	VFX = Effect.new(Character)
+	VFX:Start(Visuals:GetPlayers(Character, 10))
+	self.VFX = VFX
+	print(VFX)
 
 	self:ApplyCooldown(4)
 
 	local Stun = NegativeEffects.Stun.new(self.Character)
 	Stun:Start(6)
-
-	VFX:Start(Visuals:GetPlayers(Character, 10))
 
 	print("[Skill Start]", script.Name)
 
@@ -108,6 +109,7 @@ function Skill:OnStartServer()
 	local daggerVelocity: BodyVelocity
 
 	local function bringbackDagger(characterHit)
+		local direction = (TojiDagger.Handle.Position - Character.HumanoidRootPart.Position).Unit
 		local distance = (TojiDagger.Handle.Position - Character.HumanoidRootPart.Position).Magnitude
 		local duration = 0.5
 		local speed = distance * 0.99 / duration
@@ -118,6 +120,8 @@ function Skill:OnStartServer()
 			if hrp then
 				daggerVelocity.Parent = hrp
 				print("[Toji Dagger] Bringing back dagger to character:", hrp)
+
+				hrp.CFrame = CFrame.lookAlong(hrp.CFrame.Position, -direction)
 			end
 		end
 
@@ -138,6 +142,9 @@ function Skill:OnStartServer()
 			TojiDagger:Destroy()
 			daggerVelocity:Destroy()
 			Character:FindFirstChild("Chains"):Destroy()
+
+			VFX:PullEnd()
+
 			self._End:Fire()
 		end)
 	end
@@ -157,7 +164,12 @@ function Skill:OnStartServer()
 		print("[Chain Hit] Target:", target)
 		mainChain:cancel()
 		hitbox:Disconnect()
+
+		VFX:Hit(target.Parent, Animations.Victim)
+		self:Hit()
+		task.wait(0.1)
 		self:PullStart()
+		VFX:PullStart(target.Parent, Animations.Victim)
 		bringbackDagger(target.Parent)
 	end
 
@@ -217,6 +229,7 @@ function Skill:OnStartServer()
 
 	Promise.delay(2):andThen(function()
 		self:Throw()
+		VFX:Throw(TojiDagger)
 		throwDagger()
 	end)
 
@@ -230,7 +243,8 @@ end
 
 function Skill:Throw()
 	ClientSignals.Throw:Fire()
-	VFX:Throw()
+	--	print(VFX)
+	--	VFX:Throw()
 end
 
 WCS.DefineMessage(Skill.Throw, {
@@ -239,7 +253,7 @@ WCS.DefineMessage(Skill.Throw, {
 })
 
 function Skill:Hit(characterHit)
-	VFX:Hit()
+	--VFX:Hit(characterHit)
 end
 
 WCS.DefineMessage(Skill.Hit, {
@@ -248,7 +262,7 @@ WCS.DefineMessage(Skill.Hit, {
 })
 
 function Skill:PullEnd()
-	VFX:PullEnd()
+	self.VFX:PullEnd()
 end
 
 WCS.DefineMessage(Skill.PullEnd, {
@@ -284,7 +298,6 @@ function Skill:OnStartClient()
 	print("[Chain Spin Animation Started]")
 	-- instead you will wait for the throw message from the server
 	ClientSignals.Throw:Once(function()
-		print("T_T")
 		chainSpinTrack:Stop()
 	end)
 	ClientSignals.Throw:Wait()

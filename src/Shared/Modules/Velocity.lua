@@ -1,7 +1,9 @@
 local module = {}
 
 function module:Velocity(part, direction, distance, time)
-	if not part:IsA("BasePart") or direction.Magnitude == 0 then return end
+	if not part:IsA("BasePart") or direction.Magnitude == 0 then
+		return
+	end
 
 	local bodyPosition = Instance.new("BodyPosition")
 	bodyPosition.Position = part.Position + direction.Unit * distance
@@ -21,11 +23,15 @@ end
 function module:VelocityRelativeRoot(character, enemy, time, distance, upforce)
 	local root = enemy:FindFirstChild("HumanoidRootPart")
 	local charRoot = character:FindFirstChild("HumanoidRootPart")
-	if not root or not charRoot then return end
-	if not upforce then upforce = 0 end
+	if not root or not charRoot then
+		return
+	end
+	if not upforce then
+		upforce = 0
+	end
 
 	local direction = charRoot.CFrame.LookVector
-	local targetPosition = root.Position + direction * distance + Vector3.new(0,upforce,0)
+	local targetPosition = root.Position + direction * distance + Vector3.new(0, upforce, 0)
 
 	local bodyPosition = Instance.new("BodyPosition")
 	bodyPosition.Position = targetPosition
@@ -46,8 +52,14 @@ function module:RemoveAllBodyMovers(part, completeCleaning)
 	local removedBodyMovers = {}
 	local success, result = pcall(function()
 		for _, obj in (not completeCleaning and part:GetChildren() or part:GetDescendants()) do
-			if obj:IsA("BodyPosition") or obj:IsA("BodyVelocity") or obj:IsA("BodyGyro") or 
-				obj:IsA("BodyThruster") or obj:IsA("BodyForce") or obj:IsA("BodyAngularVelocity") then
+			if
+				obj:IsA("BodyPosition")
+				or obj:IsA("BodyVelocity")
+				or obj:IsA("BodyGyro")
+				or obj:IsA("BodyThruster")
+				or obj:IsA("BodyForce")
+				or obj:IsA("BodyAngularVelocity")
+			then
 				table.insert(removedBodyMovers, obj)
 			end
 		end
@@ -57,32 +69,49 @@ function module:RemoveAllBodyMovers(part, completeCleaning)
 	end
 end
 
-function module:SlowDownVelocity(character, enemy, t, max_distance)
-	
-	local root = enemy:FindFirstChild("HumanoidRootPart")
-	local charRoot = character:FindFirstChild("HumanoidRootPart")
-	if not root or not charRoot then return end
+function module:SlowDownVelocity(character, speed, time)
+	local root = character:FindFirstChild("HumanoidRootPart")
+	if not root then
+		return
+	end
 
-	local direction = charRoot.CFrame.LookVector
-	local targetPosition = root.Position + direction * max_distance
+	local runService = game:GetService("RunService")
 
-	local bodyPosition = Instance.new("BodyPosition")
-	bodyPosition.Position = targetPosition
-	bodyPosition.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-	bodyPosition.P = 10000
-	bodyPosition.D = 1000
-	bodyPosition.Name = "TemporaryBodyPosition"
-	bodyPosition.Parent = root
+	local bodyVelocity = Instance.new("BodyVelocity")
+	bodyVelocity.MaxForce = Vector3.new(1e5, 0, 1e5)
+	bodyVelocity.Velocity = root.CFrame.LookVector * speed
+	bodyVelocity.Name = "TemporaryBodyVelocity"
+	bodyVelocity.Parent = root
 
-	task.delay(t, function()
-		if bodyPosition and bodyPosition.Parent then
-			bodyPosition:Destroy()
+	local startTime = tick()
+	local initialSpeed = speed
+
+	local connection
+	connection = runService.Heartbeat:Connect(function()
+		local elapsed = tick() - startTime
+		local progress = elapsed / time
+
+		if progress >= 1 then
+			if bodyVelocity and bodyVelocity.Parent then
+				bodyVelocity:Destroy()
+			end
+			connection:Disconnect()
+		else
+			local currentSpeed = initialSpeed * (1 - progress)
+			if bodyVelocity and bodyVelocity.Parent then
+				bodyVelocity.Velocity = root.CFrame.LookVector * currentSpeed
+			end
 		end
 	end)
-	
-	game:GetService("TweenService"):Create(bodyPosition,TweenInfo.new(t),{["MaxForce"] = Vector3.zero}):Play()
-	
-	
+
+	task.delay(time + 0.1, function()
+		if bodyVelocity and bodyVelocity.Parent then
+			bodyVelocity:Destroy()
+		end
+		if connection then
+			connection:Disconnect()
+		end
+	end)
 end
 
 return module

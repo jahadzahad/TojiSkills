@@ -15,6 +15,7 @@ WCSClient:RegisterDirectory(ReplicatedStorage.Shared.WCS.StatusEffects)
 WCSClient:Start()
 
 REFX.Register(ReplicatedStorage.Shared.Refx.Combat.Skills.Toji)
+--REFX.Register(ReplicatedStorage.Shared.Refx.Combat.Skills.BlackLeg)
 REFX.Start()
 
 require(ReplicatedStorage.Shared.Modules.Darwin.DarwinUtilities).AnimationHandler:PreloadAnimations(
@@ -50,7 +51,7 @@ UserInputService.InputBegan:Connect(function(Input, Processed)
 	elseif Input.KeyCode == Enum.KeyCode.X then
 		Class:GetSkillFromString("Massacre Counter"):Start()
 	elseif Input.KeyCode == Enum.KeyCode.C then
-		Class:GetSkillFromString("El Thor"):Start()
+		Class:GetSkillFromString("Party Table"):Start()
 	end
 end)
 

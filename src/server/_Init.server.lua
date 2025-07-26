@@ -18,6 +18,7 @@ WCSServer:Start()
 local WCSCharacter = WCS.Character
 
 local TojiMoveset = require(ReplicatedStorage.Shared.WCS.Movesets.Toji)
+local BlackLegMoveset = require(ReplicatedStorage.Shared.WCS.Movesets.BlackLeg)
 
 local function PlayerAdded(Player: Player)
 	local function CharacterAdded(Character: Model)
@@ -27,7 +28,7 @@ local function PlayerAdded(Player: Player)
 		Character.Parent = workspace.World.Alive
 
 		local CharacterClass = WCSCharacter.new(Character)
-		CharacterClass:ApplySkillsFromMoveset(TojiMoveset)
+		CharacterClass:ApplySkillsFromMoveset(BlackLegMoveset)
 
 		Humanoid.Died:Once(function()
 			CharacterClass:Destroy()

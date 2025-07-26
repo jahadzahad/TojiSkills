@@ -9,8 +9,7 @@ local Animation = require(ReplicatedStorage.Shared.Modules.Animation)
 
 local Effect = REFX.CreateEffect(tostring(script.Name))
 
-local Assets = ReplicatedStorage.Shared.Assets.Visuals.Movesets.Toji["Massacre Counter"]
-local CameraAnimation = Assets.CamAnim
+local Assets = ReplicatedStorage.Shared.Assets.Visuals.Movesets.BlackLeg["PartyTable"]
 
 local function EmitAll(Parent: Instance, IgnoreNames: {}?)
 	local IgnoreList = IgnoreNames or {}
@@ -56,60 +55,6 @@ local function EnableAll(Parent: Instance)
 			Descendant.Enabled = true
 		end
 	end
-end
-
-local Camera = workspace.CurrentCamera
-
-function Cinematic(Character, Target, Folder, Dependant)
-	if typeof(Target) == "CFrame" then
-		Target = { CFrame = Target }
-	end
-
-	local CinematicsFolder = Folder
-
-	local CurrentCameraCFrame = workspace.CurrentCamera.CFrame
-
-	Camera.CameraType = Enum.CameraType.Scriptable
-	local FrameTime = 0
-	local Connection
-
-	Connection = RunService.RenderStepped:Connect(function(DT)
-		local NewDT = DT * 60
-		FrameTime += NewDT
-		local NeededFrame = CinematicsFolder.Frames:FindFirstChild(tonumber(math.ceil(FrameTime)))
-		local NeededFOV = CinematicsFolder.FOV:FindFirstChild(tonumber(math.ceil(FrameTime)))
-		if NeededFrame then
-			Character.Humanoid.AutoRotate = false
-			game.StarterGui:SetCore("ResetButtonCallback", false)
-			game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
-			Camera.CFrame = Target.CFrame * NeededFrame.Value
-			if NeededFOV then
-				Camera.FieldOfView = tonumber(NeededFOV.Value)
-			end
-		else
-			Connection:Disconnect()
-			game.StarterGui:SetCore("ResetButtonCallback", true)
-			game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
-			game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
-			Character.Humanoid.AutoRotate = true
-			Camera.CameraType = Enum.CameraType.Custom
-			Camera.CFrame = CurrentCameraCFrame
-			Camera.FieldOfView = 70
-		end
-
-		Character.Humanoid.Died:Connect(function()
-			Connection:Disconnect()
-			game.StarterGui:SetCore("ResetButtonCallback", true)
-			game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
-			game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
-			Character.Humanoid.AutoRotate = true
-			Camera.CameraType = Enum.CameraType.Custom
-			Camera.CFrame = CurrentCameraCFrame
-			Camera.FieldOfView = 70
-		end)
-	end)
-
-	return Connection
 end
 
 local EffectFunctions = {}
@@ -166,23 +111,62 @@ function Effect:Hit(characterHit, victimAnimationID)
 	end
 end
 
+function Effect:End()
+	DisableAll(self.flameWindVFX)
+	DisableAll(self.windVFX)
+	task.wait(4)
+	_G.NewShake("Stop", self.RootPart.Position, 5)
+end
+
+function Effect:_startEffects(character: Model)
+	local HRP = character:FindFirstChild("HumanoidRootPart")
+
+	_G.NewShake("Bump2", HRP.Position, 5)
+	--	_G.NewShake("Vibrate", HRP.Position, 5)
+
+	local windVFX = Assets.Wind:Clone()
+	windVFX.Parent = workspace.World.Debris
+	Debris:AddItem(windVFX, 15)
+
+	local flameWindVFX = Assets.FlameWind:Clone()
+	flameWindVFX.Parent = workspace.World.Debris
+	Debris:AddItem(flameWindVFX, 15)
+
+	local weld1 = Instance.new("ManualWeld")
+	weld1.Part0 = HRP
+	weld1.Part1 = windVFX
+	weld1.Parent = windVFX
+	weld1.C0 = CFrame.new(0, 0, 0)
+
+	local weld2 = Instance.new("ManualWeld")
+	weld2.Part0 = HRP
+	weld2.Part1 = flameWindVFX
+	weld2.Parent = flameWindVFX
+	weld2.C0 = CFrame.new(0, 0, 0)
+
+	self.flameWindVFX = flameWindVFX
+	self.windVFX = windVFX
+
+	EmitAll(windVFX)
+	EnableAll(windVFX)
+
+	task.delay(0.1, function()
+		EmitAll(flameWindVFX)
+		EnableAll(flameWindVFX)
+	end)
+end
+
 function Effect:OnStart(Character: Model)
 	self.Character = Character
 	self.DestroyOnEnd = false
 	self.MaxLifetime = 40
 
-	local Scene = Assets.Scene:Clone()
-	Scene.RootPart.CFrame = Character.HumanoidRootPart.CFrame
-	Scene.Parent = workspace.World.Debris
-	self.Scene = Scene
-	game.Debris:AddItem(Scene, 40)
-
-	Cinematic(Character, Scene.RootPart.CFrame, CameraAnimation, Scene)
-
 	print("[Effect Start]", script.Name)
 	local RootPart = Character.PrimaryPart
 	self.Character = Character
-	self.CameraAnimation = CameraAnimation
+	self.RootPart = RootPart
+
+	self:_startEffects(Character)
 
 	print("SKILL VFX: " .. script.Name)
 end

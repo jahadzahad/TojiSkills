@@ -64,38 +64,53 @@ local DebrisFolder = workspace.World.Debris
 
 local EffectFunctions = {
 
-	Throw = function(RootPart: BasePart, SpinVFX)
+	Throw = function(RootPart: BasePart, SpinVFX, Dagger)
 		DisableAll(SpinVFX)
 
-		--EmitAll(Throw, {})
-		--Debris:AddItem(Throw, 3)
+		local ThrowVFX = Assets.throw:Clone()
+		ThrowVFX.take.CFrame = RootPart.CFrame * CFrame.Angles(0, math.rad(90), math.rad(90)) * CFrame.new(0, -8, 0)
+		ThrowVFX.take.Transparency = 1
+		ThrowVFX.Parent = DebrisFolder
+
+		local WindTrailEmitter = Assets.DaggerWind.Attachment:Clone()
+		WindTrailEmitter.Parent = Dagger.Handle
+		print(WindTrailEmitter)
+
+		EmitAll(ThrowVFX, {})
+		Debris:AddItem(ThrowVFX, 3)
 	end,
 
 	PullEnd = function(RootPart: BasePart) end,
 
-	PullStart = function(RootPart: BasePart)
-		local Teleport = Assets.Teleport:Clone()
-		Teleport.CFrame = RootPart.CFrame * CFrame.new(0, 0, 0)
-		Teleport.Parent = DebrisFolder
+	PullStart = function(characterHit, victimAnimationID)
+		local RootPart = characterHit.HumanoidRootPart
+		local Humanoid = characterHit:FindFirstChildOfClass("Humanoid")
+		local Animator = Humanoid and Humanoid:FindFirstChildOfClass("Animator")
+		if not Animator then
+			return
+		end
+		print(victimAnimationID)
+		local victimAnim = Animator:LoadAnimation(victimAnimationID)
 
-		EmitAll(Teleport, {})
-		Debris:AddItem(Teleport, 5)
+		victimAnim:Play()
+
+		local ThrowVFX = Assets.throw:Clone()
+		ThrowVFX.take.CFrame = RootPart.CFrame * CFrame.Angles(0, math.rad(90), math.rad(90)) * CFrame.new(0, -8, 0)
+		ThrowVFX.take.Transparency = 1
+		ThrowVFX.Parent = DebrisFolder
+		EmitAll(ThrowVFX, {})
+		Debris:AddItem(ThrowVFX, 3)
+
+		return victimAnim
 	end,
 
-	Hit = function(Character: Model)
-		local Hit = Assets.Hit:Clone()
-		Hit.CFrame = Character["Right Arm"].RightGripAttachment.WorldCFrame
-		Hit.Parent = DebrisFolder
-
-		EmitAll(Hit, {})
-		Debris:AddItem(Hit, 3)
-	end,
+	Hit = function(Character: Model) end,
 }
 
 function Effect:OnConstruct(Character: Model, Animation: AnimationTrack)
 	self.Character = Character
 	self.DestroyOnEnd = false
-	self.MaxLifetime = 15
+	self.MaxLifetime = 30
 
 	print("[Constructed] " .. tostring(script.Name))
 end
@@ -107,25 +122,29 @@ function Effect:Hit()
 	EffectFunctions.Hit(self.Character)
 end
 
-function Effect:Throw()
+function Effect:Throw(Dagger)
 	local RootPart = self.Character.PrimaryPart
-	_G.NewShake("Shake", RootPart.Position, 5)
+	_G.NewShake("Shake", RootPart.Position, 2)
+	_G.NewShake("Vibration", RootPart.Position, 2)
 
-	EffectFunctions.Throw(RootPart, self.SpinVFX)
+	EffectFunctions.Throw(RootPart, self.SpinVFX, Dagger)
 end
 
-function Effect:PullStart()
-	local RootPart = self.Character.PrimaryPart
-	_G.NewShake("Radar", RootPart.Position, 5)
+function Effect:PullStart(characterHit, victimAnimationID)
+	local RootPart = characterHit.PrimaryPart
+	_G.NewShake("Radar", RootPart.Position, 40)
 
-	EffectFunctions.Teleport(RootPart)
+	self.victimAnim = EffectFunctions.PullStart(characterHit, victimAnimationID)
 end
 
 function Effect:PullEnd()
 	local RootPart = self.Character.PrimaryPart
-	_G.NewShake("Shake", RootPart.Position, 5)
+	_G.NewShake("DownSlam", RootPart.Position, 5)
+	if self.victimAnim then
+		self.victimAnim:Stop()
+	end
 
-	EffectFunctions.Jump(RootPart)
+	EffectFunctions.PullEnd(RootPart)
 end
 
 function Effect:OnStart(Character: Model)

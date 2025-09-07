@@ -21,7 +21,7 @@ local Evade = require(ReplicatedStorage.Shared.WCS.Skills.Combat.Evade)
 local Dash = require(ReplicatedStorage.Shared.WCS.Skills.Movement.Dash)
 local BlockHit = require(ReplicatedStorage.Shared.Refx.Combat.BlockHit)
 
-local Pakets = require(ReplicatedStorage.Shared.Packets) 
+local Pakets = require(ReplicatedStorage.Shared.Packets)
 
 local Character = WCS.Character
 
@@ -38,10 +38,15 @@ function HitboxModule:createHitbox(data, onHit)
 	local self = setmetatable({}, HitboxModule.HitboxClass)
 
 	local caster = data.Caster
-	if not caster then return self end
+	if not caster then
+		return self
+	end
 
 	local rootPart = caster:FindFirstChild("HumanoidRootPart")
-	if not rootPart then return self end
+	if not rootPart then
+		return self
+	end
+	print("Creating hitbox for:", caster.Name)
 
 	self.Destroyed = false
 	self.Visualize = nil
@@ -68,7 +73,7 @@ function HitboxModule:createHitbox(data, onHit)
 
 	local params = OverlapParams.new()
 	params.FilterType = Enum.RaycastFilterType.Include
-	params.FilterDescendantsInstances = data.FilterList or {Workspace.Entities, workspace.Map}
+	params.FilterDescendantsInstances = data.FilterList or { Workspace.Entities, workspace.Map, workspace }
 
 	local AlreadyChecked = {}
 	local hitList = {}
@@ -76,11 +81,14 @@ function HitboxModule:createHitbox(data, onHit)
 	local houseTimestamps = {}
 
 	local function shouldHit(character)
-		if character:GetAttribute("IFrames") and not ignoresIFrames then return false end
+		print("Checking hit for character:", character)
+		if character:GetAttribute("IFrames") and not ignoresIFrames then
+			return false
+		end
 		if character:GetAttribute("Parry") and not ignoresParry then
 			print("Parried")
 			if Players:GetPlayerFromCharacter(character) then
-				Pakets.Parry:FireClient(Players:GetPlayerFromCharacter(character),{Caster = caster})
+				Pakets.Parry:FireClient(Players:GetPlayerFromCharacter(character), { Caster = caster })
 			else
 				getCurrentWCS_Character(character):GetSkillFromConstructor(Block):End(caster)
 				getCurrentWCS_Character(character):GetSkillFromConstructor(Parry):Start(caster)
@@ -105,7 +113,9 @@ function HitboxModule:createHitbox(data, onHit)
 				return false
 			end
 		end
-		if character:GetAttribute("Ragdoll") and not ignoresRagdoll then return false end
+		if character:GetAttribute("Ragdoll") and not ignoresRagdoll then
+			return false
+		end
 		return true
 	end
 
@@ -148,7 +158,6 @@ function HitboxModule:createHitbox(data, onHit)
 
 				local results = Workspace:GetPartBoundsInBox(cframe, size, params)
 				local currentTime = tick()
-
 				for _, part in pairs(results) do
 					if part.Parent:IsA("Model") and destructionDamage > 0 then
 						local House = part.Parent
@@ -171,12 +180,21 @@ function HitboxModule:createHitbox(data, onHit)
 					end
 
 					local character = part:FindFirstAncestorOfClass("Model")
-					if not character then continue end
-					if character == caster then continue end
-					if not character:FindFirstChildOfClass("Humanoid") then continue end
+					if not character then
+						continue
+					end
+					if character == caster then
+						continue
+					end
+					if not character:FindFirstChildOfClass("Humanoid") then
+						continue
+					end
+					print("Checking character:", character)
 
 					if hitType == "OneHit" then
-						if table.find(hitList, character) then continue end
+						if table.find(hitList, character) then
+							continue
+						end
 					elseif hitType == "Tick" then
 						local lastHitTime = hitTimestamps[character]
 						if lastHitTime and (currentTime - lastHitTime) < tickInterval then
@@ -185,7 +203,10 @@ function HitboxModule:createHitbox(data, onHit)
 					elseif hitType == "SingleTarget" then
 					end
 
-					if not shouldHit(character) then self:Destroy() break end
+					if not shouldHit(character) then
+						self:Destroy()
+						break
+					end
 
 					if hitType == "OneHit" then
 						table.insert(hitList, character)
@@ -202,13 +223,16 @@ function HitboxModule:createHitbox(data, onHit)
 				end
 			end
 		end)
+		print("Hitbox started for:", caster.Name)
 	end)
 
 	return self
 end
 
 function HitboxModule.HitboxClass:Move(targetCFrame, duration, easingStyle, easingDirection, onComplete)
-	if self.Destroyed then return end
+	if self.Destroyed then
+		return
+	end
 
 	if not self.Direction then
 		self.Direction = self.RootPart.CFrame
@@ -254,14 +278,14 @@ function HitboxModule.HitboxClass:Move(targetCFrame, duration, easingStyle, easi
 			end
 		elseif easingStyle == Enum.EasingStyle.Bounce then
 			if easingDirection == Enum.EasingDirection.Out then
-				if alpha < 1/2.75 then
+				if alpha < 1 / 2.75 then
 					alpha = 7.5625 * alpha * alpha
-				elseif alpha < 2/2.75 then
-					alpha = 7.5625 * (alpha - 1.5/2.75) * (alpha - 1.5/2.75) + 0.75
-				elseif alpha < 2.5/2.75 then
-					alpha = 7.5625 * (alpha - 2.25/2.75) * (alpha - 2.25/2.75) + 0.9375
+				elseif alpha < 2 / 2.75 then
+					alpha = 7.5625 * (alpha - 1.5 / 2.75) * (alpha - 1.5 / 2.75) + 0.75
+				elseif alpha < 2.5 / 2.75 then
+					alpha = 7.5625 * (alpha - 2.25 / 2.75) * (alpha - 2.25 / 2.75) + 0.9375
 				else
-					alpha = 7.5625 * (alpha - 2.625/2.75) * (alpha - 2.625/2.75) + 0.984375
+					alpha = 7.5625 * (alpha - 2.625 / 2.75) * (alpha - 2.625 / 2.75) + 0.984375
 				end
 			end
 		end
@@ -299,7 +323,9 @@ function HitboxModule.HitboxClass:AddFor(length)
 end
 
 function HitboxModule.HitboxClass:Destroy()
-	if self.Destroyed then return end
+	if self.Destroyed then
+		return
+	end
 	self.Destroyed = true
 
 	self:StopMove()

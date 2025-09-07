@@ -15,7 +15,7 @@ WCSClient:RegisterDirectory(ReplicatedStorage.Shared.WCS.StatusEffects)
 WCSClient:Start()
 
 REFX.Register(ReplicatedStorage.Shared.Refx.Combat.Skills.Toji)
---REFX.Register(ReplicatedStorage.Shared.Refx.Combat.Skills.BlackLeg)
+REFX.Register(ReplicatedStorage.Shared.Refx.Combat.Skills.BlackLeg)
 REFX.Start()
 
 require(ReplicatedStorage.Shared.Modules.Darwin.DarwinUtilities).AnimationHandler:PreloadAnimations(
@@ -47,11 +47,15 @@ UserInputService.InputBegan:Connect(function(Input, Processed)
 	local Class = GetCharacterClass()
 
 	if Input.KeyCode == Enum.KeyCode.Z then
-		Class:GetSkillFromString("Chain Reel"):Start()
+		Class:GetSkillFromString("Concasser"):Start()
 	elseif Input.KeyCode == Enum.KeyCode.X then
-		Class:GetSkillFromString("Massacre Counter"):Start()
+		Class:GetSkillFromString("Triple Kicks"):Start()
 	elseif Input.KeyCode == Enum.KeyCode.C then
 		Class:GetSkillFromString("Party Table"):Start()
+	elseif Input.KeyCode == Enum.KeyCode.V then
+		Class:GetSkillFromString("Grill Shot"):Start()
+	elseif Input.KeyCode == Enum.KeyCode.B then
+		Class:GetSkillFromString("Projectile Kick"):Start()
 	end
 end)
 

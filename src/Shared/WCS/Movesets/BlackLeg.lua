@@ -21,6 +21,10 @@ local Dash = require(Skills.Movement.Dash)
 local SlideJump = require(Skills.Movement.SlideJump)
 
 local Party_Table = require(Skills.Moves.BlackLeg["Party Table"])
+local Grill_Shot = require(Skills.Moves.BlackLeg["Grill Shot"])
+local Concasser = require(Skills.Moves.BlackLeg["Concasser"])
+local ProjectileKick = require(Skills.Moves.BlackLeg["Projectile Kick"])
+local TripleKicks = require(Skills.Moves.BlackLeg["Triple Kicks"])
 
 return WCS.CreateMoveset("BlackLeg", {
 	Fist,
@@ -37,4 +41,8 @@ return WCS.CreateMoveset("BlackLeg", {
 	CriticalAttack,
 	Uptilt,
 	Party_Table,
+	Grill_Shot,
+	Concasser,
+	ProjectileKick,
+	TripleKicks,
 })
